@@ -181,6 +181,54 @@ class DB(object):
         collection = [s for s in client.tutorial.inventory2.find()]
         self.inventory2 = Collection(collection)
 
+def translate_object(obj):
+    if isinstance(obj, ast.Name):
+        return "$" + obj.id
+    elif isinstance(obj, ast.Attribute):
+        # ex. animal.name
+        return "$" + expr.left.value.id + '.' + expr.left.attr
+
+    elif isinstance(obj, ast.Str):
+        return obj.s
+    elif isinstance(obj, ast.Num):
+        return obj.n
+    elif isinstance(obj, ast.List):
+        in_list = []
+        for elt in obj.elts:
+            in_list.append(translate_object(elt))
+        return in_list
+    elif isinstance(obj, ast.Dict):
+        in_dict = {}
+        for key, value_node in zip(obj.keys, obj.values):
+            assert isinstance(key, ast.Name)
+            in_dict[key.id] = translate_object(value_node)
+        return in_dict
+    elif isinstance(obj, ast.Call):
+        name = obj.func.id
+        if name == "len":
+            # use size
+            arg = translate_object(obj.args[0])
+            return {'$size': arg}
+        else:
+            pdb.set_trace()
+            raise Exception("Don't know call")
+    elif isinstance(obj, ast.Subscript):
+        parent = obj.value.id
+        index = obj.slice.value.n
+        return {'$arrayElemAt': ["$" + parent, index]}
+    elif isinstance(obj, ast.NameConstant):
+        if obj.value is None:
+            return None
+        else:
+            pdb.set_trace()
+            raise Exception("Don't know name constant")
+    elif isinstance(obj, ast.ListComp):
+        raise Exception("Not implemented yet")
+    else:
+        pdb.set_trace()
+        raise Exception("Don't know comparator")
+
+
 def translate_compare(expr):
     assert isinstance(expr, ast.Compare)
 
@@ -190,13 +238,7 @@ def translate_compare(expr):
     assert len(expr.comparators) == 1, expr.comparators
     comparator = expr.comparators[0]
 
-    if isinstance(expr.left, ast.Name):
-        left = expr.left.id
-    else:
-        raise Exception("Don't know")
-
-    import pdb
-    #pdb.set_trace()
+    left = translate_object(expr.left)
 
     operators = {
         'Eq': '$eq',
@@ -205,20 +247,7 @@ def translate_compare(expr):
         'In': '$in',
     }
 
-    operands = ["$" + left]
-
-    if isinstance(comparator, ast.Str):
-        operands.append(comparator.s)
-    elif isinstance(comparator, ast.Num):
-        operands.append(comparator.n)
-    elif isinstance(comparator, ast.List):
-        in_list = []
-        for elt in comparator.elts:
-            assert isinstance(elt, ast.Str)
-            in_list.append(elt.s)
-        operands.append(in_list)
-    else:
-        raise Exception("Don't know comparator")
+    operands = [left, translate_object(comparator)]
 
     return { operators[op.__class__.__name__]: operands }
 
@@ -242,7 +271,8 @@ def translate_boolop(expr):
 
     return {operator: operands}
 
-def translate_expression(text):
+
+def translate_expression(text=''):
     if len(text) == 0:
         return {}
 
@@ -271,6 +301,7 @@ class ExpressiveCollection:
     def find(self, expression):
         # convert arguemnt to $expr query and run it
         translated = translate_expression(expression)
+        print("query: {}".format(translated))
         cursor = self.mongo_collection.find(translated)
 
         for document in cursor:
@@ -296,6 +327,7 @@ class ExpressiveClient:
 
 def repl():
     client = ExpressiveClient()
+    db = client.test
     code.interact(
         banner="Query with Expression",
         local=locals(),

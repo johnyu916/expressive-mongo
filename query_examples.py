@@ -1,22 +1,27 @@
+#DONE
 db.inventory.find( {} )
 jdb.inventory.find( '')
 
 
+#DONE
 db.inventory.find( { 'status': "D" } )
 db.inventory.find({$expr: {$eq: ["$status", "D"]}})
 jdb.inventory.find('status == "D"')
 
 
+#DONE
 db.inventory.find( { 'status': { '$in': [ "A", "D" ] } } )
 db.inventory.find({$expr: {$in: ["$status", ["A", "D"]]}})
 jdb.inventory.find( 'status in [ "A", "D" ]' )
 
 
+#DONE
 db.inventory.find( { 'status': "A", 'qty': { '$lt': 30 } } )
 db.inventory.find({$expr: {$and: [{"$eq": ["$status", "A"]}, {$lt: ["$qty", 30]}]}})
 jdb.inventory.find( 'status == "A" and qty < 30' )
 
 
+#DONE
 db.inventory.find( { '$or': [ { 'status': "A" }, { 'qty': { '$lt': 30 } } ] } )
 db.inventory.find({$expr: {$or: [{"$eq": ["$status", "A"]}, {$lt: ["$qty", 30]}]}})
 jdb.inventory.find( 'status == "A" or qty < 30' )
@@ -35,11 +40,13 @@ db.inventory.find({$expr: {$eq: ["$size", { 'h': 14, 'w': 21, 'uom': "cm"}]}})
 jdb.inventory.find('size == { h: 14, w: 21, uom: "cm" }')
 
 
+#DONE
 db.inventory.find( { "size.uom": "in" } )
 db.inventory.find({$expr: { $eq: ["$size.uom", "in"] }} )
 jdb.inventory.find('size.uom == "in"')
 
 
+#DONE
 db.inventory.find( { "size.h": { '$lt': 15 } } )
 db.inventory.find({$expr: { $eq: ["$size.uom", "in"] }} )
 jdb.inventory.find('size.h < 15 ')
@@ -49,6 +56,7 @@ db.inventory.find( { "size.h": { $lt: 15 }, "size.uom": "in", status: "D" } )
 jdb.inventory.find('size.h < 15 and size.uom == "in" and status == "D"')
 
 # arrays
+# DONE
 db.inventory2.find( { tags: ["red", "blank"] } )
 db.inventory2.find({$expr: { $eq: ["$tags", ["red", "blank"]] }} )
 jdb.inventory2.find( 'tags == ["red", "blank"]' )
@@ -59,6 +67,7 @@ db.inventory2.find({$expr: { $and: [{$in: ["red", "$tags"]}, {$in: ["blank", "$t
 #db.inventory.find('all(tags, ["red", "blank"])')
 jdb.inventory2.find('"red" in tags and "blank" in tags')
 
+# DONE
 db.inventory2.find( { tags: "red" } )
 db.inventory2.find({$expr: {$in: ["red", "$tags"]} })
 jdb.inventory2.find('"red" in tags')
@@ -76,38 +85,40 @@ jdb.inventory2.find('len([for element in dim_cm if element > 25]) > 0')
 db.inventory2.find( { dim_cm: { $gt: 15, $lt: 20 } } )
 db.inventory2.find( { $expr: { $gt: [ {$size:{$filter: { input: "$dim_cm", as: "x", cond: { $or: [{'$gt': ["$$x", 15]}, {'$lt': ["$$x", 20]}] }}}}, 0]}})
 jdb.inventory2.find('len(filter(lambda x: x < 20 or x > 15, dim_cm)) > 0')
-jdb.inventory2.find('len([for x in dim_cm if x <20 or x > 15]) > 0')
+jdb.inventory2.find('len([x for x in dim_cm if x <20 or x > 15]) > 0')
 
 
 db.inventory2.find( { dim_cm: { $elemMatch: { $gt: 22, $lt: 30 } } } )
 # don't need special elemMatch
 db.inventory2.find( { $expr: { $gt: [ {$size:{$filter: { input: "$dim_cm", as: "x", cond: { $and: [{'$gt': ["$$x", 22]}, {'$lt': ["$$x", 30]}] }}}}, 0]}})
 db.inventory.find('len(filter(lambda x: x > 22 and x > 30, dim_cm)) > 0')
-db.inventory.find('len([for element in dim_cm if element > 22 and element < 30]) > 0')
+db.inventory.find('len([x for x in dim_cm if x > 22 and x < 30]) > 0')
 
-
+#DONE
 # second element is greater than 25
 db.inventory2.find( { "dim_cm.1": { $gt: 25 } } )
 db.inventory2.find({$expr: {$gt: [{$arrayElemAt: ["$dim_cm", 1]}, 25]}})
 jdb.inventory2.find('dim_cm[1] > 25')
 
-
+#DONE
 db.inventory.find( { "tags": { $size: 3 } } )
 db.inventory2.find({$expr: {$eq: [{$size: "$tags"}, 3]}} )
 jdb.inventory2.find('len(tags) == 3')
 
+#DONE
 # mql: ?
 db.inventory2.find({$expr: {$lt: [{$size: "$tags"}, 3]}} )
 jdb.inventory2.find('len(tags) < 3')
 
-db.inventory.find( { item: null } )
-db.inventory.find({$expr: {$eq: ["$item", null]}})
-db.inventory.find('item == None')
+#DONE
+db.inventory3.find( { item: null } )
+db.inventory3.find({$expr: {$eq: ["$item", null]}})
+db.inventory3.find('item == None')
 
-
+#DONE
 db.inventory.find( { item : { $exists: false } } )
-db.inventory.find({$expr: {$eq: ["$size", "$missing"]}})
-db.inventory.find('item in document')
+db.inventory.find({$expr: {$eq: ["$item", "$missing"]}})
+db.inventory.find('item == missing')
 
 
 
