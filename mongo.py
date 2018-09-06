@@ -181,9 +181,13 @@ class DB(object):
         collection = [s for s in client.tutorial.inventory2.find()]
         self.inventory2 = Collection(collection)
 
-def translate_object(obj):
+def translate_object(obj, is_filter_cond=False):
     if isinstance(obj, ast.Name):
-        return "$" + obj.id
+        if is_filter_cond:
+            prefix = '$$'
+        else:
+            prefix = '$'
+        return prefix + obj.id
     elif isinstance(obj, ast.Attribute):
         # ex. animal.name
         return "$" + obj.value.id + '.' + obj.attr
@@ -209,9 +213,15 @@ def translate_object(obj):
             # use size
             arg = translate_object(obj.args[0])
             return {'$size': arg}
+        elif name == "filter":
+            assert len(obj.args) == 2, "filter() should have 2 parameters"
+            _lambda = obj.args[0]
+            arg = _lambda.args.args[0].arg
+            _input = translate_object(obj.args[1])
+            return {'$filter': {'input': _input, 'as': arg, 'cond': translate_boolop(_lambda.body, is_filter_cond=True)} }
         else:
             pdb.set_trace()
-            raise Exception("Don't know call")
+            raise Exception("Don't know call" + name)
     elif isinstance(obj, ast.Subscript):
         parent = obj.value.id
         index = obj.slice.value.n
@@ -229,7 +239,7 @@ def translate_object(obj):
         raise Exception("Don't know comparator")
 
 
-def translate_compare(expr):
+def translate_compare(expr, is_filter_cond=False):
     assert isinstance(expr, ast.Compare)
 
     assert len(expr.ops) == 1, expr.ops
@@ -238,7 +248,7 @@ def translate_compare(expr):
     assert len(expr.comparators) == 1, expr.comparators
     comparator = expr.comparators[0]
 
-    left = translate_object(expr.left)
+    left = translate_object(expr.left, is_filter_cond)
 
     operators = {
         'Eq': '$eq',
@@ -247,12 +257,12 @@ def translate_compare(expr):
         'In': '$in',
     }
 
-    operands = [left, translate_object(comparator)]
+    operands = [left, translate_object(comparator, is_filter_cond)]
 
     return { operators[op.__class__.__name__]: operands }
 
 
-def translate_boolop(expr):
+def translate_boolop(expr, is_filter_cond=False):
     assert isinstance(expr, ast.BoolOp)
 
     if isinstance(expr.op, ast.And):
@@ -263,9 +273,9 @@ def translate_boolop(expr):
     operands = []
     for value in expr.values:
         if isinstance(value, ast.BoolOp):
-            operands.append(translate_boolop(value))
+            operands.append(translate_boolop(value, is_filter_cond))
         elif isinstance(value, ast.Compare):
-            operands.append(translate_compare(value))
+            operands.append(translate_compare(value, is_filter_cond))
         else:
             raise Exception("Can't")
 
