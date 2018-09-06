@@ -186,7 +186,7 @@ def translate_object(obj):
         return "$" + obj.id
     elif isinstance(obj, ast.Attribute):
         # ex. animal.name
-        return "$" + expr.left.value.id + '.' + expr.left.attr
+        return "$" + obj.value.id + '.' + obj.attr
 
     elif isinstance(obj, ast.Str):
         return obj.s
