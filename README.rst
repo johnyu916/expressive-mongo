@@ -88,6 +88,9 @@ Examples
     >>> db.inventory.find('item == missing')
     query: {'$expr': {'$eq': ['$item', '$missing']}}
 
+    >>> db.inventory2.find('len(filter(lambda x: x < 20 or x > 15, dim_cm)) > 0')
+    query: {'$expr': {'$gt': [{'$size': {'$filter': {'input': '$dim_cm', 'as': 'x', 'cond': {'$or': [{'$lt': ['$$x', 20]}, {'$gt': ['$$x', 15]}]}}}}, 0]}}
+
 Installation
 ============
 
