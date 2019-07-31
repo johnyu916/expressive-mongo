@@ -94,8 +94,15 @@ Examples
 Installation
 ============
 
-1. Install MongoDB (3.6 or above), python 3, and virtualenv
-2. Run the following::
+1. Install MongoDB (3.6 or above).
+2. Install Python 3 (if needed) and run virtualenv at the root of the git repository::
 
-    $ virtualenv venv/
+    $ python3 -m venv venv
+    
+3. Activate virtualenv::
+
+    $ . venv/bin/activate
+    
+4. Install required python packages::
+
     $ pip install -r reqiurements.txt #this installs pymongo
