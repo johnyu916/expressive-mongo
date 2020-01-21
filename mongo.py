@@ -3,6 +3,7 @@ import ast
 import code
 import copy
 import pdb
+import argparse
 
 from pymongo import MongoClient
 
@@ -140,13 +141,14 @@ class Collection(object):
     def __init__(self, collection):
         self.collection = collection
 
-    def find(self, text):
+    def find(self, text=None):
         results = self._find(text)
         for result in results:
             print(result)
 
     def _find(self, text):
-        #pdb.set_trace()
+        if text is None:
+            return self.collection
         if len(text) == 0:
             return self.collection
 
@@ -304,44 +306,51 @@ def translate_expression(text=''):
         raise Exception("Don't know")
 
 class ExpressiveCollection:
-    def __init__(self, name, mongo_collection):
+    def __init__(self, name, mongo_collection, verbose):
         self.name = name
         self.mongo_collection = mongo_collection
+        self.verbose = verbose
 
-    def find(self, expression):
+    def find(self, expression=''):
         # convert arguemnt to $expr query and run it
         translated = translate_expression(expression)
-        print("query: {}".format(translated))
+        if self.verbose:
+            print("query: {}".format(translated))
         cursor = self.mongo_collection.find(translated)
 
         for document in cursor:
             print(document)
 
 class ExpressiveDatabase:
-    def __init__(self, name, mongo_db):
+    def __init__(self, name, mongo_db, verbose):
         self.name = name
         self.mongo_db = mongo_db
+        self.verbose = verbose
 
     def __getattr__(self, name):
         # construct a DB object
-        return ExpressiveCollection(name, self.mongo_db[name])
+        return ExpressiveCollection(name, self.mongo_db[name], self.verbose)
 
 class ExpressiveClient:
-    def __init__(self):
+    def __init__(self, verbose):
         self.mongo_client = MongoClient()
+        self.verbose = verbose
 
     def __getattr__(self, name):
         # construct a DB object
-        return ExpressiveDatabase(name, self.mongo_client[name])
+        return ExpressiveDatabase(name, self.mongo_client[name], self.verbose)
 
 
-def repl():
-    client = ExpressiveClient()
+def repl(verbose):
+    client = ExpressiveClient(verbose)
     db = client.test
     code.interact(
-        banner="Query with Expression",
+        banner="Query with Expression. Try 'db'",
         local=locals(),
     )
 
 if __name__ == "__main__":
-    repl()
+    parser = argparse.ArgumentParser(description='Run expressive MongoDB queries')
+    parser.add_argument('--verbose', action='store_true', help='verbose output')
+    args = parser.parse_args()
+    repl(args.verbose)
