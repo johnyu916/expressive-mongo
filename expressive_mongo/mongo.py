@@ -299,6 +299,9 @@ def translate_boolop(expr, is_filter_cond=False):
 
 
 def to_mongo(text=''):
+    """
+    Translate a python expression inside a string to a MongoDB expression query.
+    """
     if len(text) == 0:
         return {}
 

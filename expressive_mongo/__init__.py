@@ -1,1 +1,1 @@
-from mongo import to_mongo
+from .mongo import to_mongo
